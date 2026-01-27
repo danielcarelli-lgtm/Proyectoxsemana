@@ -23,6 +23,15 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         this.render();
     }
 
+    public getOutputs(): IOutputs {
+        return {};
+    }
+
+    public destroy(): void {
+        const t = document.getElementById("pcf-active-tooltip");
+        if (t) t.remove();
+    }
+
     private async _loadProjects(): Promise<void> {
         const stateCode = this._showActive ? "0" : "1";
         const fetchXml = `<fetch version="1.0" mapping="logical" distinct="true"><entity name="sec_proyecto"><attribute name="sec_proyectoid"/><attribute name="sec_name"/><order attribute="sec_name" descending="false"/><filter type="and"><condition attribute="statecode" operator="eq" value="${stateCode}"/></filter></entity></fetch>`;
@@ -55,8 +64,9 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
                 const horas = (reg["sec_tiempoimputado"] || 0) / 60;
                 const desc = reg["sec_descripcion"] || "-";
 
-                if (!dataMap[userId]) dataMap[userId] = { name: userName, hours: {}, details: {} };
+                if (!dataMap[userId]) dataMap[userId] = { name: userName, hours: {}, details: {}, weeklyTotal: 0 };
                 dataMap[userId].hours[fechaKey] = (dataMap[userId].hours[fechaKey] || 0) + horas;
+                dataMap[userId].weeklyTotal += horas;
                 
                 if (!dataMap[userId].details[fechaKey]) dataMap[userId].details[fechaKey] = [];
                 dataMap[userId].details[fechaKey].push({ project: projectName, task: taskName, hours: horas.toFixed(2), comment: desc });
@@ -73,7 +83,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const vTag = document.createElement("div");
         vTag.className = "version-tag";
-        vTag.innerText = "v1.1.5";
+        vTag.innerText = "v1.1.8";
         mainWrapper.appendChild(vTag);
 
         const title = document.createElement("h2");
@@ -81,14 +91,16 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         title.innerText = "Informe semanal";
         mainWrapper.appendChild(title);
 
-        // --- ZONA DE GRÁFICO ---
         if (this._rawRecords.length > 0) {
-            mainWrapper.appendChild(this._createDonutSection());
+            const dashboard = document.createElement("div");
+            dashboard.className = "pcf-dashboard";
+            dashboard.appendChild(this._createDonutSection());
+            dashboard.appendChild(this._createWeeklyBarChart());
+            mainWrapper.appendChild(dashboard);
         }
 
         const toolbar = document.createElement("div");
         toolbar.className = "pcf-toolbar";
-
         const leftGroup = document.createElement("div");
         leftGroup.className = "toolbar-left";
 
@@ -121,14 +133,19 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         const weekDays = this.getWeekDays(this._currentWeekOffset);
         const weekNav = document.createElement("div");
         weekNav.className = "week-nav-container";
-        weekNav.innerHTML = `<button class="nav-btn-img rounded" id="prev">&#9664;</button><button class="btn-today rounded" id="btnToday">Hoy</button><span class="week-range-text">${weekDays[0].labelShort} - ${weekDays[4].labelShort}</span><button class="nav-btn-img rounded" id="next">&#9654;</button>`;
+        weekNav.innerHTML = `
+            <button class="nav-btn-img-circular" id="prev">&#9664;</button>
+            <button class="btn-today-original" id="btnToday">Hoy</button>
+            <span class="week-range-text-original">${weekDays[0].labelShort} - ${weekDays[4].labelShort}</span>
+            <button class="nav-btn-img-circular" id="next">&#9654;</button>
+        `;
         
         toolbar.appendChild(leftGroup);
         toolbar.appendChild(weekNav);
         mainWrapper.appendChild(toolbar);
 
         const tableContainer = document.createElement("div");
-        tableContainer.className = "table-scroll-wrapper rounded";
+        tableContainer.className = "table-outer-box";
         tableContainer.appendChild(this.createTable(weekDays));
         mainWrapper.appendChild(tableContainer);
 
@@ -142,7 +159,6 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
     private _createDonutSection(): HTMLElement {
         const container = document.createElement("div");
         container.className = "donut-container rounded shadow";
-        
         const isAll = this._selectedProjectId === "ALL";
         const statsMap: any = {};
         let totalHours = 0;
@@ -159,7 +175,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         });
 
         const sortedStats = Object.keys(statsMap).map(k => ({ label: k, ...statsMap[k] })).sort((a,b) => b.hours - a.hours);
-        const colors = ["#0078d4", "#2b88d8", "#5ca3e0", "#8dbdea", "#bed7f3", "#dff0ff"];
+        const colors = ["#0078d4", "#2b88d8", "#5ca3e0", "#8dbdea", "#bed7f3", "#a9d1f7", "#81b1e1"];
 
         let currentPercent = 0;
         const gradientParts = sortedStats.map((s, i) => {
@@ -170,8 +186,8 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         });
 
         const chartTitle = document.createElement("div");
-        chartTitle.className = "donut-title";
-        chartTitle.innerText = isAll ? "Distribución por Proyecto" : "Distribución por Tarea";
+        chartTitle.className = "chart-title";
+        chartTitle.innerText = isAll ? "PROYECTOS" : "TAREAS";
         container.appendChild(chartTitle);
 
         const content = document.createElement("div");
@@ -203,6 +219,47 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         return container;
     }
 
+    private _createWeeklyBarChart(): HTMLElement {
+        const container = document.createElement("div");
+        container.className = "bar-chart-container rounded shadow";
+        const chartTitle = document.createElement("div");
+        chartTitle.className = "chart-title";
+        chartTitle.innerText = "ACUMULADO SEMANAL / 40H";
+        container.appendChild(chartTitle);
+
+        const barsWrapper = document.createElement("div");
+        barsWrapper.className = "bars-wrapper";
+
+        const displayUsers = this._users
+            .filter(u => u.name.toLowerCase().includes(this._searchText))
+            .sort((a,b) => b.weeklyTotal - a.weeklyTotal);
+
+        displayUsers.forEach(user => {
+            const barRow = document.createElement("div");
+            barRow.className = "bar-row";
+            const nameLabel = document.createElement("div");
+            nameLabel.className = "bar-name";
+            nameLabel.innerText = user.name.split(' ')[0];
+            const barBackground = document.createElement("div");
+            barBackground.className = "bar-background";
+            const barFill = document.createElement("div");
+            barFill.className = "bar-fill";
+            const percentage = Math.min((user.weeklyTotal / 40) * 100, 100);
+            barFill.style.width = `${percentage}%`;
+            if (user.weeklyTotal > 40) barFill.classList.add("over-40");
+            const hoursLabel = document.createElement("div");
+            hoursLabel.className = "bar-hours";
+            hoursLabel.innerText = `${user.weeklyTotal.toFixed(1)}h`;
+            barBackground.appendChild(barFill);
+            barRow.appendChild(nameLabel);
+            barRow.appendChild(barBackground);
+            barRow.appendChild(hoursLabel);
+            barsWrapper.appendChild(barRow);
+        });
+        container.appendChild(barsWrapper);
+        return container;
+    }
+
     private createTable(weekDays: any[]): HTMLTableElement {
         const table = document.createElement("table");
         table.className = "imputation-table";
@@ -219,7 +276,8 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
             if (day.key === todayKey) th.className = "today-column";
             hRow.appendChild(th);
         });
-        hRow.insertCell().innerHTML = "<strong>Total Sem.</strong>";
+        const totalHeader = hRow.insertCell();
+        totalHeader.innerHTML = "<strong>Total Sem.</strong>";
 
         const tbody = table.createTBody();
         const dailyTotals: any = {};
@@ -248,7 +306,8 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const tfoot = table.createTFoot();
         const fRow = tfoot.insertRow();
-        fRow.insertCell().innerHTML = "<strong>TOTAL EQUIPO</strong>";
+        const fLabel = fRow.insertCell();
+        fLabel.innerHTML = "<strong>TOTAL EQUIPO</strong>";
         weekDays.forEach(day => {
             const cell = fRow.insertCell();
             cell.innerText = (dailyTotals[day.key] || 0).toFixed(1);
@@ -258,15 +317,25 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         return table;
     }
 
-    private _addAdvancedTooltip(cell: HTMLTableCellElement, data: any[]) {
+    private _addAdvancedTooltip(cell: HTMLTableCellElement, data: any[]): void {
         cell.classList.add("has-advanced-tooltip");
-        const tooltip = document.createElement("div");
-        tooltip.className = "advanced-tooltip rounded-sm shadow";
-        let html = `<div class="tooltip-header">Detalle de imputaciones</div><table class="tooltip-table"><thead><tr><th>Proy.</th><th>Tarea</th><th>H</th><th>Comentario</th></tr></thead><tbody>`;
-        data.forEach(d => { html += `<tr><td>${d.project}</td><td>${d.task}</td><td>${d.hours}</td><td>${d.comment}</td></tr>`; });
-        html += `</tbody></table>`;
-        tooltip.innerHTML = html;
-        cell.appendChild(tooltip);
+        cell.onmouseenter = () => {
+            const tooltip = document.createElement("div");
+            tooltip.id = "pcf-active-tooltip";
+            tooltip.className = "advanced-tooltip-fixed rounded-sm shadow";
+            let html = `<div class="tooltip-header">Detalle de imputaciones</div><table class="tooltip-table"><thead><tr><th>Proy.</th><th>Tarea</th><th>H</th><th>Comentario</th></tr></thead><tbody>`;
+            data.forEach(d => { html += `<tr><td>${d.project}</td><td>${d.task}</td><td>${d.hours}</td><td>${d.comment}</td></tr>`; });
+            html += `</tbody></table>`;
+            tooltip.innerHTML = html;
+            document.body.appendChild(tooltip);
+            const rect = cell.getBoundingClientRect();
+            tooltip.style.top = `${rect.bottom + 10 + window.scrollY}px`;
+            tooltip.style.left = `${rect.left + (rect.width / 2) - 200}px`;
+        };
+        cell.onmouseleave = () => {
+            const t = document.getElementById("pcf-active-tooltip");
+            if (t) t.remove();
+        };
     }
 
     private getWeekDays(offset: number) {
@@ -289,7 +358,4 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
     private _formatToKey(date: Date): string {
         return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
     }
-
-    public getOutputs(): IOutputs { return {}; }
-    public destroy(): void { }
 }
