@@ -1,0 +1,60 @@
+.pcf-main-wrapper { position: relative; padding: 25px; background: #fff; font-family: 'Segoe UI', sans-serif; border: 1px solid #eee; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin: 10px; }
+.rounded { border-radius: 12px; }
+.rounded-sm { border-radius: 4px; }
+.shadow { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+
+/* --- SECCIÓN DONUT --- */
+.donut-container { margin-bottom: 25px; background: #fafafa; padding: 15px; border: 1px solid #f0f0f0; }
+.donut-title { font-weight: 700; color: #666; margin-bottom: 12px; font-size: 13px; text-transform: uppercase; }
+.donut-content { display: flex; align-items: center; gap: 30px; }
+.donut-graphic { 
+    width: 120px; height: 120px; border-radius: 50%; 
+    position: relative; 
+}
+.donut-graphic::after { 
+    content: ""; position: absolute; top: 25%; left: 25%; width: 50%; height: 50%; 
+    background: #fafafa; border-radius: 50%; 
+}
+.donut-legend { display: flex; flex-wrap: wrap; gap: 15px; max-width: 70%; }
+.legend-item { font-size: 12px; color: #444; display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; transition: 0.2s; }
+.legend-item:hover { background: #eef1f5; }
+.dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* Toolbar y Filtros */
+.pcf-title { margin: 0 0 15px 0; color: #333; font-size: 20px; font-weight: 600; }
+.pcf-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; }
+.toolbar-left { display: flex; align-items: center; gap: 10px; }
+.modern-select, .search-input { padding: 9px; border: 1px solid #ddd; outline: none; }
+.btn-icon { width: 38px; height: 38px; border: 1px solid #ddd; background: white; cursor: pointer; }
+.btn-today { padding: 0 12px; height: 34px; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 13px; }
+
+/* Navegación Semanal */
+.week-nav-container { display: flex; align-items: center; gap: 8px; background: #f1f3f5; padding: 4px 12px; border-radius: 20px; }
+.nav-btn-img { width: 28px; height: 28px; border: none; background: #fff; cursor: pointer; font-size: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+/* Tabla */
+.table-scroll-wrapper { width: 100%; overflow: visible; padding-bottom: 100px; }
+.imputation-table { width: 100%; border-collapse: collapse; }
+.imputation-table th, .imputation-table td { border: 1px solid #eee; padding: 10px; text-align: center; font-size: 13px; }
+.imputation-table th { background: #f9f9f9; font-weight: 600; color: #888; }
+.user-column { text-align: left !important; font-weight: 600; background-color: #fafafa; }
+
+/* Tooltip Avanzado */
+.has-advanced-tooltip { position: relative; }
+.advanced-tooltip { 
+    display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    background: white; border: 1px solid #0078d4; z-index: 1000; min-width: 380px; margin-top: 10px;
+}
+.has-advanced-tooltip:hover .advanced-tooltip { display: block; }
+.tooltip-header { background: #0078d4; color: white; padding: 8px; font-weight: 600; font-size: 12px; }
+.tooltip-table { width: 100%; font-size: 11px; }
+.tooltip-table th { background: #f3f2f1; padding: 5px; }
+.tooltip-table td { padding: 6px; border-bottom: 1px solid #f3f2f1; text-align: left; }
+
+/* Colores */
+.today-column { background-color: #e3f2fd !important; color: #0078d4 !important; }
+.over-limit { background-color: #ffebee !important; color: #c62828 !important; }
+.incomplete { color: #f57c00; font-weight: bold; }
+.weekly-total { background-color: #fcfcfc; font-weight: bold; border-left: 3px solid #0078d4 !important; }
+.daily-total-footer { font-weight: bold; background: #f8f9fa; }
+.version-tag { position: absolute; top: 8px; right: 15px; font-size: 9px; color: #ccc; }
