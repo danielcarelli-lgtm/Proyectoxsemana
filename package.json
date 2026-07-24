@@ -12,8 +12,6 @@
     "start:watch": "pcf-scripts start watch",
     "refreshTypes": "pcf-scripts refreshTypes"
   },
-  "dependencies": {
-  },
   "devDependencies": {
     "@eslint/js": "^9.25.1",
     "@microsoft/eslint-plugin-power-apps": "^0.2.51",
@@ -24,6 +22,7 @@
     "pcf-scripts": "^1",
     "pcf-start": "^1",
     "typescript": "^5.8.3",
-    "typescript-eslint": "8.44.0"
+    "typescript-eslint": "8.44.0",
+    "update-browserslist-db": "^1.2.3"
   }
 }
