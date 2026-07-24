@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest>
-  <control namespace="ProjectControls" constructor="WeeklyTimesheet" version="1.1.10" display-name-key="WeeklyTimesheet" description-key="Restauración de UI y corrección de errores de compilación" control-type="standard">
+  <control namespace="ProjectControls" constructor="WeeklyTimesheet" version="2.0.1" display-name-key="WeeklyTimesheet" description-key="Restauración de UI y corrección de errores de compilación" control-type="standard">
     <property name="projectData" display-name-key="Project Data" description-key="Dataset de proyectos" of-type="SingleLine.Text" usage="bound" required="true" />
     <resources>
       <code path="index.ts" order="1" />

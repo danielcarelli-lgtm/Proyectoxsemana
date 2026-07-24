@@ -3,6 +3,11 @@ import { IInputs, IOutputs } from "./generated/ManifestTypes";
 export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInputs, IOutputs> {
     private _container: HTMLDivElement;
     private _context: ComponentFramework.Context<IInputs>;
+    
+    // View State
+    private _viewMode: 'WEEKLY' | 'RESOURCE' = 'WEEKLY';
+    
+    // Weekly Report State
     private _currentWeekOffset: number = 0;
     private _showActive: boolean = true;
     private _projects: any[] = [];
@@ -10,6 +15,10 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
     private _selectedProjectId: string = "ALL";
     private _searchText: string = "";
     private _rawRecords: any[] = [];
+
+    // Resource Report State
+    private _resourceTasks: any[] = [];
+    private _selectedResourceId: string = "ALL";
 
     public init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: () => void, state: ComponentFramework.Dictionary, container: HTMLDivElement): void {
         this._container = container;
@@ -76,6 +85,34 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         } catch (error) { console.error(error); }
     }
 
+    private async _loadResourceTasks(): Promise<void> {
+        const fetchXml = `<fetch>
+            <entity name="sec_miembrodelequipo">
+                <attribute name="sec_usuarioid" />
+                <link-entity name="sec_tarea" from="sec_tareaid" to="sec_tareadeproyectoid" link-type="inner" alias="TDP">
+                    <attribute name="sec_esfuerzoestimado" />
+                    <attribute name="sec_horasimputadas" />
+                    <attribute name="sec_idtarea" />
+                    <attribute name="sec_name" />
+                    <attribute name="sec_proyectoid" />
+                    <filter>
+                        <condition attribute="sec_horasimputadas" operator="lt" valueof="sec_estimado" />
+                        <condition attribute="statuscode" operator="in">
+                            <value>1</value>
+                            <value>919690001</value>
+                        </condition>
+                    </filter>
+                </link-entity>
+            </entity>
+        </fetch>`;
+        
+        try {
+            const result = await this._context.webAPI.retrieveMultipleRecords("sec_miembrodelequipo", `?fetchXml=${encodeURIComponent(fetchXml)}`);
+            this._resourceTasks = result.entities;
+            this.render();
+        } catch (error) { console.error(error); }
+    }
+
     private render(): void {
         this._container.innerHTML = "";
         const mainWrapper = document.createElement("div");
@@ -83,14 +120,54 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const vTag = document.createElement("div");
         vTag.className = "version-tag";
-        vTag.innerText = "v1.1.8";
+        vTag.innerText = "v2.0.2";
         mainWrapper.appendChild(vTag);
+
+        // Cabecera con título y selector de vista
+        const headerContainer = document.createElement("div");
+        headerContainer.className = "header-container";
 
         const title = document.createElement("h2");
         title.className = "pcf-title";
-        title.innerText = "Informe semanal";
-        mainWrapper.appendChild(title);
+        title.innerText = "Panel de Control";
 
+        const toggleContainer = document.createElement("div");
+        toggleContainer.className = "view-toggle-container";
+
+        const btnWeekly = document.createElement("button");
+        btnWeekly.className = `view-toggle-btn ${this._viewMode === 'WEEKLY' ? 'active' : ''}`;
+        btnWeekly.innerText = "Informe Semanal";
+        btnWeekly.onclick = () => { 
+            this._viewMode = 'WEEKLY'; 
+            this.render(); 
+        };
+
+        const btnResource = document.createElement("button");
+        btnResource.className = `view-toggle-btn ${this._viewMode === 'RESOURCE' ? 'active' : ''}`;
+        btnResource.innerText = "Informe por Recurso";
+        btnResource.onclick = () => { 
+            this._viewMode = 'RESOURCE'; 
+            this._loadResourceTasks(); 
+        };
+
+        toggleContainer.appendChild(btnWeekly);
+        toggleContainer.appendChild(btnResource);
+        
+        headerContainer.appendChild(title);
+        headerContainer.appendChild(toggleContainer);
+        mainWrapper.appendChild(headerContainer);
+
+        // Renderizado condicional basado en la vista activa
+        if (this._viewMode === 'WEEKLY') {
+            this._renderWeeklyView(mainWrapper);
+        } else {
+            this._renderResourceView(mainWrapper);
+        }
+
+        this._container.appendChild(mainWrapper);
+    }
+
+    private _renderWeeklyView(mainWrapper: HTMLDivElement): void {
         if (this._rawRecords.length > 0) {
             const dashboard = document.createElement("div");
             dashboard.className = "pcf-dashboard";
@@ -149,11 +226,115 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         tableContainer.appendChild(this.createTable(weekDays));
         mainWrapper.appendChild(tableContainer);
 
-        this._container.appendChild(mainWrapper);
+        // Listeners
+        weekNav.querySelector("#prev")?.addEventListener("click", () => { this._currentWeekOffset--; this._loadImputaciones(); });
+        weekNav.querySelector("#next")?.addEventListener("click", () => { this._currentWeekOffset++; this._loadImputaciones(); });
+        weekNav.querySelector("#btnToday")?.addEventListener("click", () => { this._currentWeekOffset = 0; this._loadImputaciones(); });
+    }
 
-        this._container.querySelector("#prev")?.addEventListener("click", () => { this._currentWeekOffset--; this._loadImputaciones(); });
-        this._container.querySelector("#next")?.addEventListener("click", () => { this._currentWeekOffset++; this._loadImputaciones(); });
-        this._container.querySelector("#btnToday")?.addEventListener("click", () => { this._currentWeekOffset = 0; this._loadImputaciones(); });
+    private _renderResourceView(mainWrapper: HTMLDivElement): void {
+        const toolbar = document.createElement("div");
+        toolbar.className = "pcf-toolbar";
+        
+        // Agrupar tareas por recurso basado en la entidad sec_miembrodelequipo
+        const resourceMap: any = {};
+        this._resourceTasks.forEach(t => {
+            const rId = t["_sec_usuarioid_value"];
+            const rName = t["_sec_usuarioid_value@OData.Community.Display.V1.FormattedValue"] || "Desconocido";
+            
+            if (rId && !resourceMap[rId]) {
+                resourceMap[rId] = { id: rId, name: rName, tasks: [] };
+            }
+            if (rId) {
+                resourceMap[rId].tasks.push(t);
+            }
+        });
+        const resources = Object.values(resourceMap).sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+        const select = document.createElement("select");
+        select.className = "modern-select rounded";
+        select.innerHTML = `<option value="ALL">Todos los recursos</option>`;
+        resources.forEach((r: any) => {
+            const opt = document.createElement("option");
+            opt.value = r.id; 
+            opt.text = r.name;
+            if (r.id === this._selectedResourceId) opt.selected = true;
+            select.appendChild(opt);
+        });
+        select.onchange = (e: any) => { this._selectedResourceId = e.target.value; this.render(); };
+
+        const btnRefresh = document.createElement("button");
+        btnRefresh.className = "btn-icon rounded";
+        btnRefresh.innerHTML = "&#8635;";
+        btnRefresh.onclick = () => this._loadResourceTasks();
+
+        const leftGroup = document.createElement("div");
+        leftGroup.className = "toolbar-left";
+        leftGroup.appendChild(select);
+        leftGroup.appendChild(btnRefresh);
+        toolbar.appendChild(leftGroup);
+        mainWrapper.appendChild(toolbar);
+
+        const tableContainer = document.createElement("div");
+        tableContainer.className = "table-outer-box";
+        
+        const table = document.createElement("table");
+        table.className = "imputation-table";
+        const thead = table.createTHead();
+        const hRow = thead.insertRow();
+        hRow.innerHTML = `<th class="user-column-header" style="text-align: left;"><strong>Recurso</strong></th><th>Proyecto</th><th>Tarea</th><th>Horas Pendientes</th>`;
+
+        const tbody = table.createTBody();
+
+        resources.forEach((r: any) => {
+            // Filtrar si hay un recurso seleccionado
+            if (this._selectedResourceId !== "ALL" && r.id !== this._selectedResourceId) return;
+
+            r.tasks.forEach((t: any, index: number) => {
+                const tr = tbody.insertRow();
+                
+                // Agrupar filas del recurso usando rowSpan en la primera tarea
+                if (index === 0) {
+                    const tdRes = tr.insertCell();
+                    tdRes.innerHTML = `<strong>${r.name}</strong>`;
+                    tdRes.rowSpan = r.tasks.length;
+                    tdRes.style.verticalAlign = "middle";
+                    tdRes.className = "user-column";
+                }
+                
+                const tdProj = tr.insertCell();
+                // Extraer el nombre del proyecto formateado a través del alias "TDP"
+                const projectName = t["TDP.sec_proyectoid@OData.Community.Display.V1.FormattedValue"] 
+                                 || t["_TDP.sec_proyectoid_value@OData.Community.Display.V1.FormattedValue"] 
+                                 || "-";
+                tdProj.innerText = projectName;
+                
+                const tdTask = tr.insertCell();
+                // Al ser un link-entity con alias "TDP", los valores de texto base vienen con el prefijo
+                tdTask.innerText = t["TDP.sec_name"] || "Tarea sin nombre";
+                
+                const tdHours = tr.insertCell();
+                const estimado = t["TDP.sec_esfuerzoestimado"] || 0;
+                const imputadas = t["TDP.sec_horasimputadas"] || 0;
+                const hp = estimado - imputadas;
+                
+                tdHours.innerText = hp > 0 ? hp.toString() : "0";
+                tdHours.style.fontWeight = "bold";
+                tdHours.style.color = "#0078d4";
+            });
+        });
+        
+        if (resources.length === 0 || tbody.rows.length === 0) {
+            const tr = tbody.insertRow();
+            const td = tr.insertCell();
+            td.colSpan = 4;
+            td.innerText = "No hay tareas abiertas con horas pendientes.";
+            td.style.padding = "30px";
+            td.style.color = "#888";
+        }
+
+        tableContainer.appendChild(table);
+        mainWrapper.appendChild(tableContainer);
     }
 
     private _createDonutSection(): HTMLElement {
