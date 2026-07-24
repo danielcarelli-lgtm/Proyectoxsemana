@@ -120,7 +120,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const vTag = document.createElement("div");
         vTag.className = "version-tag";
-        vTag.innerText = "v2.0.2";
+        vTag.innerText = "v2.0.4";
         mainWrapper.appendChild(vTag);
 
         // Cabecera con título y selector de vista
@@ -268,10 +268,17 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         btnRefresh.innerHTML = "&#8635;";
         btnRefresh.onclick = () => this._loadResourceTasks();
 
+        // Botón Exportar CSV
+        const btnExport = document.createElement("button");
+        btnExport.className = "btn-export";
+        btnExport.innerHTML = "Exportar a CSV";
+        btnExport.onclick = () => this._exportResourceToCsv(resources);
+
         const leftGroup = document.createElement("div");
         leftGroup.className = "toolbar-left";
         leftGroup.appendChild(select);
         leftGroup.appendChild(btnRefresh);
+        leftGroup.appendChild(btnExport);
         toolbar.appendChild(leftGroup);
         mainWrapper.appendChild(toolbar);
 
@@ -335,6 +342,47 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         tableContainer.appendChild(table);
         mainWrapper.appendChild(tableContainer);
+    }
+
+    private _exportResourceToCsv(resources: any[]): void {
+        let csvContent = "Recurso,Proyecto,Tarea,Horas Pendientes\n";
+
+        resources.forEach((r: any) => {
+            // Respetamos el filtro si hay un recurso seleccionado
+            if (this._selectedResourceId !== "ALL" && r.id !== this._selectedResourceId) return;
+
+            r.tasks.forEach((t: any) => {
+                // Limpiar y envolver textos entre comillas para evitar que comas internas rompan el CSV
+                const resName = `"${r.name.replace(/"/g, '""')}"`;
+                
+                const projectNameRaw = t["TDP.sec_proyectoid@OData.Community.Display.V1.FormattedValue"] 
+                                    || t["_TDP.sec_proyectoid_value@OData.Community.Display.V1.FormattedValue"] 
+                                    || "-";
+                const projectName = `"${projectNameRaw.replace(/"/g, '""')}"`;
+                
+                const taskNameRaw = t["TDP.sec_name"] || "Tarea sin nombre";
+                const taskName = `"${taskNameRaw.replace(/"/g, '""')}"`;
+                
+                const estimado = t["TDP.sec_esfuerzoestimado"] || 0;
+                const imputadas = t["TDP.sec_horasimputadas"] || 0;
+                const hp = estimado - imputadas;
+                const hours = hp > 0 ? hp : 0;
+
+                csvContent += `${resName},${projectName},${taskName},${hours}\n`;
+            });
+        });
+
+        // Generar Blob con BOM (\uFEFF) para forzar que Excel lo abra en UTF-8 directamente
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `HorasPendientes_${this._formatToKey(new Date()).replace('/', '-')}.csv`);
+        
+        // Simular clic para descargar
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     private _createDonutSection(): HTMLElement {
