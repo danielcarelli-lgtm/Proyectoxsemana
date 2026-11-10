@@ -1,10 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest>
-  <control namespace="ProjectControls" constructor="WeeklyTimesheet" version="2.0.4" display-name-key="WeeklyTimesheet" description-key="Restauración de UI y corrección de errores de compilación" control-type="standard">
-    <property name="projectData" display-name-key="Project Data" description-key="Dataset de proyectos" of-type="SingleLine.Text" usage="bound" required="true" />
+  <control namespace="ProjectControls" constructor="WeeklyTimesheet" version="2.0.5" display-name-key="ControlDisplayName" description-key="ControlDescription" control-type="standard">
+    <property name="projectData" display-name-key="ProjectDataDisplayName" description-key="ProjectDataDescription" of-type="SingleLine.Text" usage="bound" required="true" />
     <resources>
       <code path="index.ts" order="1" />
       <css path="css/WeeklyTimesheet.css" order="2" />
+      <resx path="strings/WeeklyTimesheet.1033.resx" version="1.0.0" />
+      <resx path="strings/WeeklyTimesheet.3082.resx" version="1.0.0" />
+      <resx path="strings/WeeklyTimesheet.2070.resx" version="1.0.0" />
     </resources>
     <feature-usage>
       <uses-feature name="WebAPI" required="true" />

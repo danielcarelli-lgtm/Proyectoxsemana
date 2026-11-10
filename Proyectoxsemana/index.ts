@@ -66,9 +66,9 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
             
             this._rawRecords.forEach((reg: any) => {
                 const userId = reg["_ownerid_value"];
-                const userName = reg["_ownerid_value@OData.Community.Display.V1.FormattedValue"] || "Desconocido";
-                const projectName = reg["_sec_proyectoid_value@OData.Community.Display.V1.FormattedValue"] || "N/A";
-                const taskName = reg["_sec_tareaproyectoid_value@OData.Community.Display.V1.FormattedValue"] || "Tarea";
+                const userName = reg["_ownerid_value@OData.Community.Display.V1.FormattedValue"] || this._getString("Unknown");
+                const projectName = reg["_sec_proyectoid_value@OData.Community.Display.V1.FormattedValue"] || this._getString("NotAvailable");
+                const taskName = reg["_sec_tareaproyectoid_value@OData.Community.Display.V1.FormattedValue"] || this._getString("Task");
                 const fechaKey = this._formatToKey(new Date(reg["sec_fecha"]));
                 const horas = (reg["sec_tiempoimputado"] || 0) / 60;
                 const desc = reg["sec_descripcion"] || "-";
@@ -120,7 +120,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const vTag = document.createElement("div");
         vTag.className = "version-tag";
-        vTag.innerText = "v2.0.4";
+        vTag.innerText = "v2.0.5";
         mainWrapper.appendChild(vTag);
 
         // Cabecera con título y selector de vista
@@ -129,14 +129,14 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const title = document.createElement("h2");
         title.className = "pcf-title";
-        title.innerText = "Panel de Control";
+        title.innerText = this._getString("DashboardTitle");
 
         const toggleContainer = document.createElement("div");
         toggleContainer.className = "view-toggle-container";
 
         const btnWeekly = document.createElement("button");
         btnWeekly.className = `view-toggle-btn ${this._viewMode === 'WEEKLY' ? 'active' : ''}`;
-        btnWeekly.innerText = "Informe Semanal";
+        btnWeekly.innerText = this._getString("WeeklyReport");
         btnWeekly.onclick = () => { 
             this._viewMode = 'WEEKLY'; 
             this.render(); 
@@ -144,7 +144,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const btnResource = document.createElement("button");
         btnResource.className = `view-toggle-btn ${this._viewMode === 'RESOURCE' ? 'active' : ''}`;
-        btnResource.innerText = "Informe por Recurso";
+        btnResource.innerText = this._getString("ResourceReport");
         btnResource.onclick = () => { 
             this._viewMode = 'RESOURCE'; 
             this._loadResourceTasks(); 
@@ -183,7 +183,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const select = document.createElement("select");
         select.className = "modern-select rounded";
-        select.innerHTML = `<option value="ALL">Todos los proyectos</option>`;
+        select.innerHTML = `<option value="ALL">${this._getString("AllProjects")}</option>`;
         this._projects.forEach(p => {
             const opt = document.createElement("option");
             opt.value = p.sec_proyectoid; opt.text = p.sec_name;
@@ -194,7 +194,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const searchInput = document.createElement("input");
         searchInput.className = "search-input rounded";
-        searchInput.placeholder = "Buscar usuario...";
+        searchInput.placeholder = this._getString("SearchUserPlaceholder");
         searchInput.value = this._searchText;
         searchInput.oninput = (e: any) => { this._searchText = e.target.value.toLowerCase(); this.render(); };
 
@@ -212,7 +212,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         weekNav.className = "week-nav-container";
         weekNav.innerHTML = `
             <button class="nav-btn-img-circular" id="prev">&#9664;</button>
-            <button class="btn-today-original" id="btnToday">Hoy</button>
+            <button class="btn-today-original" id="btnToday">${this._getString("Today")}</button>
             <span class="week-range-text-original">${weekDays[0].labelShort} - ${weekDays[4].labelShort}</span>
             <button class="nav-btn-img-circular" id="next">&#9654;</button>
         `;
@@ -240,7 +240,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         const resourceMap: any = {};
         this._resourceTasks.forEach(t => {
             const rId = t["_sec_usuarioid_value"];
-            const rName = t["_sec_usuarioid_value@OData.Community.Display.V1.FormattedValue"] || "Desconocido";
+            const rName = t["_sec_usuarioid_value@OData.Community.Display.V1.FormattedValue"] || this._getString("Unknown");
             
             if (rId && !resourceMap[rId]) {
                 resourceMap[rId] = { id: rId, name: rName, tasks: [] };
@@ -253,7 +253,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const select = document.createElement("select");
         select.className = "modern-select rounded";
-        select.innerHTML = `<option value="ALL">Todos los recursos</option>`;
+        select.innerHTML = `<option value="ALL">${this._getString("AllResources")}</option>`;
         resources.forEach((r: any) => {
             const opt = document.createElement("option");
             opt.value = r.id; 
@@ -271,7 +271,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         // Botón Exportar CSV
         const btnExport = document.createElement("button");
         btnExport.className = "btn-export";
-        btnExport.innerHTML = "Exportar a CSV";
+        btnExport.innerHTML = this._getString("ExportCsv");
         btnExport.onclick = () => this._exportResourceToCsv(resources);
 
         const leftGroup = document.createElement("div");
@@ -289,7 +289,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         table.className = "imputation-table";
         const thead = table.createTHead();
         const hRow = thead.insertRow();
-        hRow.innerHTML = `<th class="user-column-header" style="text-align: left;"><strong>Recurso</strong></th><th>Proyecto</th><th>Tarea</th><th>Horas Pendientes</th>`;
+        hRow.innerHTML = `<th class="user-column-header" style="text-align: left;"><strong>${this._getString("Resource")}</strong></th><th>${this._getString("Project")}</th><th>${this._getString("Task")}</th><th>${this._getString("PendingHours")}</th>`;
 
         const tbody = table.createTBody();
 
@@ -318,7 +318,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
                 
                 const tdTask = tr.insertCell();
                 // Al ser un link-entity con alias "TDP", los valores de texto base vienen con el prefijo
-                tdTask.innerText = t["TDP.sec_name"] || "Tarea sin nombre";
+                tdTask.innerText = t["TDP.sec_name"] || this._getString("UnnamedTask");
                 
                 const tdHours = tr.insertCell();
                 const estimado = t["TDP.sec_esfuerzoestimado"] || 0;
@@ -335,7 +335,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
             const tr = tbody.insertRow();
             const td = tr.insertCell();
             td.colSpan = 4;
-            td.innerText = "No hay tareas abiertas con horas pendientes.";
+            td.innerText = this._getString("NoPendingTasks");
             td.style.padding = "30px";
             td.style.color = "#888";
         }
@@ -345,7 +345,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
     }
 
     private _exportResourceToCsv(resources: any[]): void {
-        let csvContent = "Recurso,Proyecto,Tarea,Horas Pendientes\n";
+        let csvContent = `${this._getString("Resource")},${this._getString("Project")},${this._getString("Task")},${this._getString("PendingHours")}\n`;
 
         resources.forEach((r: any) => {
             // Respetamos el filtro si hay un recurso seleccionado
@@ -360,7 +360,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
                                     || "-";
                 const projectName = `"${projectNameRaw.replace(/"/g, '""')}"`;
                 
-                const taskNameRaw = t["TDP.sec_name"] || "Tarea sin nombre";
+                const taskNameRaw = t["TDP.sec_name"] || this._getString("UnnamedTask");
                 const taskName = `"${taskNameRaw.replace(/"/g, '""')}"`;
                 
                 const estimado = t["TDP.sec_esfuerzoestimado"] || 0;
@@ -377,7 +377,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `HorasPendientes_${this._formatToKey(new Date()).replace('/', '-')}.csv`);
+        link.setAttribute("download", `${this._getString("CsvFileName")}_${this._formatToKey(new Date()).replace('/', '-')}.csv`);
         
         // Simular clic para descargar
         document.body.appendChild(link);
@@ -416,7 +416,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
 
         const chartTitle = document.createElement("div");
         chartTitle.className = "chart-title";
-        chartTitle.innerText = isAll ? "PROYECTOS" : "TAREAS";
+        chartTitle.innerText = this._getString(isAll ? "Projects" : "Tasks");
         container.appendChild(chartTitle);
 
         const content = document.createElement("div");
@@ -453,7 +453,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         container.className = "bar-chart-container rounded shadow";
         const chartTitle = document.createElement("div");
         chartTitle.className = "chart-title";
-        chartTitle.innerText = "ACUMULADO SEMANAL / 40H";
+        chartTitle.innerText = this._getString("WeeklyAccumulatedHours");
         container.appendChild(chartTitle);
 
         const barsWrapper = document.createElement("div");
@@ -496,7 +496,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         const thead = table.createTHead();
         const hRow = thead.insertRow();
         const userHeader = hRow.insertCell();
-        userHeader.innerHTML = "<strong>Usuario</strong>";
+        userHeader.innerHTML = `<strong>${this._getString("User")}</strong>`;
         userHeader.className = "user-column-header";
 
         weekDays.forEach(day => {
@@ -506,7 +506,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
             hRow.appendChild(th);
         });
         const totalHeader = hRow.insertCell();
-        totalHeader.innerHTML = "<strong>Total Sem.</strong>";
+        totalHeader.innerHTML = `<strong>${this._getString("WeeklyTotal")}</strong>`;
 
         const tbody = table.createTBody();
         const dailyTotals: any = {};
@@ -536,7 +536,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         const tfoot = table.createTFoot();
         const fRow = tfoot.insertRow();
         const fLabel = fRow.insertCell();
-        fLabel.innerHTML = "<strong>TOTAL EQUIPO</strong>";
+        fLabel.innerHTML = `<strong>${this._getString("TeamTotal")}</strong>`;
         weekDays.forEach(day => {
             const cell = fRow.insertCell();
             cell.innerText = (dailyTotals[day.key] || 0).toFixed(1);
@@ -552,7 +552,7 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
             const tooltip = document.createElement("div");
             tooltip.id = "pcf-active-tooltip";
             tooltip.className = "advanced-tooltip-fixed rounded-sm shadow";
-            let html = `<div class="tooltip-header">Detalle de imputaciones</div><table class="tooltip-table"><thead><tr><th>Proy.</th><th>Tarea</th><th>H</th><th>Comentario</th></tr></thead><tbody>`;
+            let html = `<div class="tooltip-header">${this._getString("ImputationDetails")}</div><table class="tooltip-table"><thead><tr><th>${this._getString("ProjectAbbreviation")}</th><th>${this._getString("Task")}</th><th>${this._getString("HoursAbbreviation")}</th><th>${this._getString("Comment")}</th></tr></thead><tbody>`;
             data.forEach(d => { html += `<tr><td>${d.project}</td><td>${d.task}</td><td>${d.hours}</td><td>${d.comment}</td></tr>`; });
             html += `</tbody></table>`;
             tooltip.innerHTML = html;
@@ -573,15 +573,21 @@ export class WeeklyTimesheet implements ComponentFramework.StandardControl<IInpu
         const monday = new Date(today);
         const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay();
         monday.setDate(today.getDate() - (dayOfWeek - 1) + (offset * 7));
-        const names = ["lu", "ma", "mi", "ju", "vi"];
-        const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+        const languageId = this._context.userSettings.languageId;
+        const locale = languageId === 3082 ? "es-ES" : languageId === 2070 ? "pt-PT" : "en-US";
         for (let i = 0; i < 5; i++) {
             const d = new Date(monday); d.setDate(monday.getDate() + i);
             const dStr = d.getDate().toString().padStart(2, '0');
             const mStr = (d.getMonth() + 1).toString().padStart(2, '0');
-            days.push({ columnHeader: `${names[i]} ${dStr}/${mStr}`, labelShort: `${d.getDate()} ${months[d.getMonth()]}`, key: `${dStr}/${mStr}`, iso: d.toISOString().split('T')[0] });
+            const weekday = d.toLocaleDateString(locale, { weekday: "short" }).replace(/\.$/, "");
+            const month = d.toLocaleDateString(locale, { month: "short" }).replace(/\.$/, "");
+            days.push({ columnHeader: `${weekday} ${dStr}/${mStr}`, labelShort: `${d.getDate()} ${month}`, key: `${dStr}/${mStr}`, iso: d.toISOString().split('T')[0] });
         }
         return days;
+    }
+
+    private _getString(key: string): string {
+        return this._context.resources.getString(key);
     }
 
     private _formatToKey(date: Date): string {

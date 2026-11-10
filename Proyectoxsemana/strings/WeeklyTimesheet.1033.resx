@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="ControlDisplayName" xml:space="preserve"><value>Weekly Timesheet Dashboard</value></data>
+  <data name="ControlDescription" xml:space="preserve"><value>Weekly project timesheet dashboard.</value></data>
+  <data name="ProjectDataDisplayName" xml:space="preserve"><value>Project Data</value></data>
+  <data name="ProjectDataDescription" xml:space="preserve"><value>Project dataset</value></data>
+  <data name="NotAvailable" xml:space="preserve"><value>N/A</value></data>
+  <data name="CsvFileName" xml:space="preserve"><value>PendingHours</value></data>
+  <data name="DashboardTitle" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="WeeklyReport" xml:space="preserve"><value>Weekly Report</value></data>
+  <data name="ResourceReport" xml:space="preserve"><value>Resource Report</value></data>
+  <data name="AllProjects" xml:space="preserve"><value>All projects</value></data>
+  <data name="SearchUserPlaceholder" xml:space="preserve"><value>Search user...</value></data>
+  <data name="Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Task" xml:space="preserve"><value>Task</value></data>
+  <data name="AllResources" xml:space="preserve"><value>All resources</value></data>
+  <data name="ExportCsv" xml:space="preserve"><value>Export to CSV</value></data>
+  <data name="Resource" xml:space="preserve"><value>Resource</value></data>
+  <data name="Project" xml:space="preserve"><value>Project</value></data>
+  <data name="PendingHours" xml:space="preserve"><value>Pending Hours</value></data>
+  <data name="UnnamedTask" xml:space="preserve"><value>Unnamed task</value></data>
+  <data name="NoPendingTasks" xml:space="preserve"><value>There are no open tasks with pending hours.</value></data>
+  <data name="Projects" xml:space="preserve"><value>PROJECTS</value></data>
+  <data name="Tasks" xml:space="preserve"><value>TASKS</value></data>
+  <data name="WeeklyAccumulatedHours" xml:space="preserve"><value>WEEKLY TOTAL / 40H</value></data>
+  <data name="User" xml:space="preserve"><value>User</value></data>
+  <data name="WeeklyTotal" xml:space="preserve"><value>Week Total</value></data>
+  <data name="TeamTotal" xml:space="preserve"><value>TEAM TOTAL</value></data>
+  <data name="ImputationDetails" xml:space="preserve"><value>Time Entry Details</value></data>
+  <data name="ProjectAbbreviation" xml:space="preserve"><value>Proj.</value></data>
+  <data name="HoursAbbreviation" xml:space="preserve"><value>Hrs</value></data>
+  <data name="Comment" xml:space="preserve"><value>Comment</value></data>
+</root>
